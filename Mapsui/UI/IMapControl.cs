@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using Mapsui.Geometries;
-using Mapsui.Layers;
 using Mapsui.Rendering;
 
 namespace Mapsui.UI
 {
     public interface IMapControl
     {
+        event EventHandler<MapInfoEventArgs> Info;
+
         Map Map { get; set; }
 
         event EventHandler ViewportInitialized;
@@ -17,8 +17,6 @@ namespace Mapsui.UI
         void RefreshData();
 
         void Refresh();
-
-        bool RotationLock { get; set; }
 
         double UnSnapRotationDegrees { get; set; }
 
@@ -56,12 +54,7 @@ namespace Mapsui.UI
         /// <param name="margin">An optional extra margin around the feature to enlarge the hit area.</param>
         MapInfo GetMapInfo(Point screenPosition, int margin = 0);
 
-        /// <summary>
-        /// Check, if a feature at a given screen position is hit
-        /// </summary>
-        /// <param name="layers">The layers to query for MapInfo</param>
-        /// <param name="screenPosition">Screen position to check for widgets and features</param>
-        /// <param name="margin">An optional extra margin around the feature to enlarge the hit area.</param>
-        MapInfo GetMapInfo(IEnumerable<ILayer> layers, Point screenPosition, int margin = 0);
+        INavigator Navigator { get; }
+
     }
 }

@@ -19,20 +19,26 @@ namespace Mapsui.Layers
             if (box == null) { return new List<IFeature>(); }
             var cache = _cache;
             var biggerBox = box.Grow(SymbolStyle.DefaultWidth * 2 * resolution, SymbolStyle.DefaultHeight * 2 * resolution);
-            var result = cache.Where(f => biggerBox.Intersects(f.Geometry.BoundingBox));
+            var result = cache.Where(f => biggerBox.Intersects(f.Geometry?.BoundingBox));
             return result;
         }
 
         private BoundingBox GetExtents()
         {
             // todo: Calculate extents only once. Use a _modified field to determine when this is needed.
-            var cache = _cache.ToList();
-            if (!cache.Any()) return null;
-          
-            var minX = cache.Min(b => b.Geometry.BoundingBox.MinX);
-            var minY = cache.Min(b => b.Geometry.BoundingBox.MinY);
-            var maxX = cache.Max(b => b.Geometry.BoundingBox.MaxX);
-            var maxY = cache.Max(b => b.Geometry.BoundingBox.MaxY);
+
+            var geometries = _cache
+                .Select(f => f.Geometry)
+                .Where(g => g != null && !g.IsEmpty() && g.BoundingBox != null)
+                .ToList();
+
+            if (geometries.Count == 0) return null;
+
+            var minX = geometries.Min(g => g.BoundingBox.MinX);
+            var minY = geometries.Min(g => g.BoundingBox.MinY);
+            var maxX = geometries.Max(g => g.BoundingBox.MaxX);
+            var maxY = geometries.Max(g => g.BoundingBox.MaxY);
+
             return new BoundingBox(minX, minY, maxX, maxY);
         }
 
@@ -71,21 +77,15 @@ namespace Mapsui.Layers
             return _cache.FirstOrDefault(f => f == feature);
         }
 
-        /// <summary>
-        /// Signals to listeners that data has changed. This is necessary for situations where
-        /// an individual geometry is edited. The layer itself can not know about it's change.
-        /// </summary>
-        public void SignalDataChanged()
-        {
-            OnDataChanged(new DataChangedEventArgs());
-        }
+        [Obsolete("Use DataHasChanged instead", true)]
+        public void SignalDataChanged() {}
 
         /// <summary>
         /// Tries to remove a feature.
         /// </summary>
         /// <param name="feature">Feature to remove</param>
         /// <param name="compare">Optional method to compare the feature with any of the other 
-        /// features in the list. If ommitted a reference compare is done.</param>
+        /// features in the list. If omitted a reference compare is done.</param>
         /// <returns></returns>
         public bool TryRemove(IFeature feature, Func<IFeature, IFeature, bool> compare = null)
         {

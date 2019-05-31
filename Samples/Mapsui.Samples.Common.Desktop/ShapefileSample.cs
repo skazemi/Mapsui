@@ -1,27 +1,36 @@
-﻿using Mapsui.Layers;
+﻿using System.IO;
+using System.Reflection;
+using Mapsui.Desktop.Shapefile;
+using Mapsui.Layers;
 using Mapsui.Providers;
 using Mapsui.Styles;
 using Mapsui.Styles.Thematics;
-using System.IO;
-using System.Reflection;
-using Mapsui.Providers.Shapefile;
+using Mapsui.UI;
 
 namespace Mapsui.Samples.Common.Desktop
 {
-    public static class ShapefileSample
+    public class ShapefileSample : ISample
     {
+        public string Name => "1 Shapefile";
+        public string Category => "Desktop";
+
+        public void Setup(IMapControl mapControl)
+        {
+            mapControl.Map = CreateMap();
+        }
+
         public static Map CreateMap()
         {
             var map = new Map();
 
-            var countrySource = new ShapeFile(GetAppDir() + "\\GeoData\\World\\countries.shp", true) {CRS = "EPSG:3785"};
-            var citySource = new ShapeFile(GetAppDir() + "\\GeoData\\World\\cities.shp", true) {CRS = "EPSG:3785"};
+            var countrySource = new ShapeFile(GetAppDir() + "\\GeoData\\World\\countries.shp", true);
+            var citySource = new ShapeFile(GetAppDir() + "\\GeoData\\World\\cities.shp", true);
 
             map.Layers.Add(new RasterizingLayer(CreateCountryLayer(countrySource)));
             map.Layers.Add(new RasterizingLayer(CreateCityLayer(citySource)));
             map.Layers.Add(new RasterizingLayer(CreateCountryLabelLayer(countrySource)));
             map.Layers.Add(new RasterizingLayer(CreateCityLabelLayer(citySource)));
-
+            
             return map;
         }
 

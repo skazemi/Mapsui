@@ -139,6 +139,16 @@ namespace Mapsui.Widgets.ScaleBar
         public float Scale { get; } = 1;
 
         /// <summary>
+        /// Stroke width for lines
+        /// </summary>
+        public float StrokeWidth { get; set; } = 2;
+
+        /// <summary>
+        /// Stroke width for halo of lines
+        /// </summary>
+        public float StrokeWidthHalo { get; set; } = 4;
+
+        /// <summary>
         /// Length of the ticks
         /// </summary>
         public float TickLength { get; set; } = 3;
@@ -286,6 +296,7 @@ namespace Mapsui.Widgets.ScaleBar
         /// <summary>
         /// Get pairs of points, which determin start and stop of the lines used to draw the scalebar
         /// </summary>
+        /// <param name="viewport">The viewport of the map</param>
         /// <param name="scaleBarLength1">Length of upper scalebar</param>
         /// <param name="scaleBarLength2">Length of lower scalebar</param>
         /// <param name="stroke">Width of line</param>
@@ -392,6 +403,7 @@ namespace Mapsui.Widgets.ScaleBar
         /// <summary>
         /// Calculates the top-left-position of upper and lower text
         /// </summary>
+        /// <param name="viewport">The viewport</param>
         /// <param name="textSize">Default textsize for the string "9999 m"</param>
         /// <param name="textSize1">Size of upper text of scalebar</param>
         /// <param name="textSize2">Size of lower text of scalebar</param>
@@ -456,8 +468,9 @@ namespace Mapsui.Widgets.ScaleBar
             }
         }
 
-        public override void HandleWidgetTouched(INavigator navigator, Point position)
+        public override bool HandleWidgetTouched(INavigator navigator, Point position)
         {
+            return false;
         }
 
         public bool CanTransform()

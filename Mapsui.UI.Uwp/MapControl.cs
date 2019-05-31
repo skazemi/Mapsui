@@ -29,7 +29,6 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Shapes;
-using Mapsui.Utilities;
 using SkiaSharp.Views.UWP;
 using HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment;
 using VerticalAlignment = Windows.UI.Xaml.VerticalAlignment;
@@ -61,7 +60,9 @@ namespace Mapsui.UI.Uwp
             PointerWheelChanged += MapControl_PointerWheelChanged;
 
             ManipulationMode = ManipulationModes.Scale | ManipulationModes.TranslateX | ManipulationModes.TranslateY | ManipulationModes.Rotate;
+            ManipulationStarted += OnManipulationStarted;
             ManipulationDelta += OnManipulationDelta;
+
             ManipulationInertiaStarting += OnManipulationInertiaStarting;
 
             Tapped += OnSingleTapped;
@@ -72,18 +73,22 @@ namespace Mapsui.UI.Uwp
                 orientationSensor.OrientationChanged += (sender, args) => RunOnUIThread(Refresh);
         }
 
+
+        private void OnManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
+        {
+            _innerRotation = _viewport.Rotation;
+        }
+
         private void OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             var tabPosition = e.GetPosition(this).ToMapsui();
-            OnInfo(InvokeInfo(Map.Layers.Where(l => l.IsMapInfoLayer), Map.Widgets, Viewport, 
-                tabPosition, tabPosition, Renderer.SymbolCache, WidgetTouched, 2));
+            OnInfo(InvokeInfo(tabPosition, tabPosition, 2));
         }
 
         private void OnSingleTapped(object sender, TappedRoutedEventArgs e)
         {
             var tabPosition = e.GetPosition(this).ToMapsui();
-            OnInfo(InvokeInfo(Map.Layers.Where(l => l.IsMapInfoLayer), Map.Widgets, Viewport, 
-                tabPosition, tabPosition, Renderer.SymbolCache, WidgetTouched, 1));
+            OnInfo(InvokeInfo(tabPosition, tabPosition, 1));
         }
 
         private static Rectangle CreateSelectRectangle()
@@ -120,30 +125,24 @@ namespace Mapsui.UI.Uwp
 
         private void MapControl_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
-            if (ZoomLock) return;
+            if (Map.ZoomLock) return;
             if (!Viewport.HasSize) return;
 
             var currentPoint = e.GetCurrentPoint(this);
-            var mousePosition = currentPoint.RawPosition.ToMapsui();
-            var newResolution = DetermineNewResolution(currentPoint.Properties.MouseWheelDelta, Viewport.Resolution);
 
-            _viewport.Transform(mousePosition.X, mousePosition.Y, mousePosition.X, mousePosition.Y, Viewport.Resolution / newResolution);
-            RefreshGraphics();
+            //Needed for both MouseMove and MouseWheel event for mousewheel event
 
+            var mousePosition = new Geometries.Point(currentPoint.RawPosition.X, currentPoint.RawPosition.Y);
+
+            if (currentPoint.Properties.MouseWheelDelta > 0)
+                Navigator.ZoomIn(mousePosition);
+            else if (currentPoint.Properties.MouseWheelDelta < 0)
+                Navigator.ZoomOut(mousePosition);
+            
             e.Handled = true;
-        }
 
-        private double DetermineNewResolution(int mouseWheelDelta, double currentResolution)
-        {
-            if (mouseWheelDelta > 0)
-            {
-                return ZoomHelper.ZoomIn(_map.Resolutions, currentResolution);
-            }
-            if (mouseWheelDelta < 0)
-            {
-                return ZoomHelper.ZoomOut(_map.Resolutions, currentResolution);
-            }
-            return currentResolution;
+            RefreshGraphics();
+            RefreshData();
         }
         
         public void RefreshGraphics()
@@ -160,8 +159,6 @@ namespace Mapsui.UI.Uwp
         {
             Clip = new RectangleGeometry { Rect = new Rect(0, 0, ActualWidth, ActualHeight) };
             SetViewportSize();
-            RefreshData();
-            Refresh();
         }
 
         private void RunOnUIThread(Action action)
@@ -188,14 +185,20 @@ namespace Mapsui.UI.Uwp
         
         private void OnManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
         {
-            var (center, radius, angle) = (e.Position.ToMapsui(), e.Delta.Scale, e.Delta.Rotation);
-            var (previousCenter, prevRadius, prevAngle) = (e.Position.ToMapsui().Offset(-e.Delta.Translation.X, -e.Delta.Translation.Y), 1f, 0f);
+
+            var center = e.Position.ToMapsui();
+            var radius = e.Delta.Scale;
+            var rotation = e.Delta.Rotation;
+
+            var previousCenter=  e.Position.ToMapsui().Offset(-e.Delta.Translation.X, -e.Delta.Translation.Y);
+            var previousRadius = 1f;
+            var previousRotation = 0f;
 
             double rotationDelta = 0;
 
-            if (!RotationLock)
+            if (!Map.RotationLock)
             {
-                _innerRotation += angle - prevAngle;
+                _innerRotation += rotation - previousRotation;
                 _innerRotation %= 360;
 
                 if (_innerRotation > 180)
@@ -214,9 +217,8 @@ namespace Mapsui.UI.Uwp
                 }
             }
 
-            _viewport.Transform(center.X, center.Y, previousCenter.X, previousCenter.Y, radius / prevRadius, rotationDelta);
+            _viewport.Transform(center, previousCenter, radius / previousRadius, rotationDelta);
             RefreshGraphics();
-
             e.Handled = true;
         }
 

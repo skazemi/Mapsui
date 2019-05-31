@@ -238,6 +238,7 @@ namespace Mapsui.Geometries
         /// <returns></returns>
         public bool Intersects(BoundingBox box)
         {
+            if (box == null) return false;
             return !((box.Min.X > Max.X) ||
                      (box.Max.X < Min.X) ||
                      (box.Min.Y > Max.Y) ||
@@ -255,8 +256,8 @@ namespace Mapsui.Geometries
         {
             for (uint cIndex = 0; cIndex < 2; cIndex++)
             {
-                if (((Min[cIndex] > r.Min[cIndex]) && (Min[cIndex] < r.Min[cIndex])) ||
-                    ((Max[cIndex] > r.Max[cIndex]) && (Max[cIndex] < r.Max[cIndex])))
+                if (Min[cIndex] >= r.Min[cIndex] && Min[cIndex] <= r.Min[cIndex] ||
+                    Max[cIndex] >= r.Max[cIndex] && Max[cIndex] <= r.Max[cIndex])
                     return true;
             }
             return false;

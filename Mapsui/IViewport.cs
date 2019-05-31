@@ -30,13 +30,10 @@ namespace Mapsui
         /// <summary>
         /// Moving the position of viewport to a new one
         /// </summary>
-        /// <param name="screenX">New X position of point</param>
-        /// <param name="screenY">New Y position of point</param>
-        /// <param name="previousScreenX">Old X position of point</param>
-        /// <param name="previousScreenY">Old Y position of point</param>
-        /// <param name="deltaScale">Change of resolution for transformation (&lt;1: zoom out, >1: zoom in)</param>
+        /// <param name="position">Current center of touch</param>
+        /// <param name="previousPosition">Previous center of touch</param>
+        /// <param name="deltaResolution">Change of resolution for transformation (&lt;1: zoom out, >1: zoom in)</param>
         /// <param name="deltaRotation">Change of rotation</param>
-        void Transform(double screenX, double screenY, double previousScreenX, double previousScreenY, 
-            double deltaScale = 1, double deltaRotation = 0);
+        void Transform(Point position, Point previousPosition, double deltaResolution = 1, double deltaRotation = 0);
     }
 }
